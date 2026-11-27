@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f6ff">
+  <title>Aurora · Papillon d’état de l’agent</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f7f6fc;
+      --surface: #fff;
+      --surface-2: #f2f0fb;
+      --ink: #211b3b;
+      --muted: #77718e;
+      --line: #e8e4f1;
+      --indigo: #39257e;
+      --electric: #7252ff;
+      --cyan: #58c7ff;
+      --green: #208b69;
+      --amber: #b87916;
+      --red: #c74662;
+      --shadow: 0 24px 70px rgba(43, 30, 91, .09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--ink); background:
+        radial-gradient(ellipse at 50% -20%, rgba(120, 89, 255, .11), transparent 44%), var(--page);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app { width: min(1120px, 100% - 40px); margin: 0 auto; padding: 30px 0 48px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 750; letter-spacing: -.03em; }
+    .brand-name { color: var(--indigo); font-size: 19px; font-weight: 850; letter-spacing: -.065em; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .quiet-button { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--surface); cursor: pointer; color: var(--muted); }
+    .quiet-button:hover { border-color: #c9beed; color: var(--indigo); }
+    .intro { max-width: 730px; margin-bottom: 24px; }
+    .eyebrow { margin: 0 0 8px; color: var(--electric); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; letter-spacing: -.055em; }
+    .intro p:last-child { margin: 12px 0 0; color: var(--muted); font-size: 16px; max-width: 64ch; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(310px, .7fr); gap: 18px; align-items: start; }
+    .panel { min-width: 0; border: 1px solid rgba(225, 220, 239, .9); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
+    .stage-panel { overflow: hidden; }
+    .panel-head { padding: 18px 20px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .panel-head h2, .section-title { margin: 0; font-size: 13px; font-weight: 750; letter-spacing: -.01em; }
+    .canvas-label { font-size: 11px; color: var(--muted); }
+    .stage {
+      position: relative; min-height: 430px; padding: 24px 24px 22px; display: grid; place-items: center; overflow: hidden;
+      background: radial-gradient(ellipse at 50% 45%, rgba(116, 82, 255, .065), transparent 54%), #fff;
+      isolation: isolate;
+    }
+    .stage::before { content: ""; position: absolute; z-index: -1; width: min(66%, 370px); aspect-ratio: 1; border-radius: 50%; background: rgba(102, 77, 232, .055); filter: blur(42px); opacity: .35; transition: opacity .6s, transform .7s, background .5s; }
+    .stage[data-state="listening"]::before, .stage[data-state="thinking"]::before, .stage[data-state="tool"]::before, .stage[data-state="speaking"]::before { opacity: .8; transform: scale(1.15); background: rgba(104, 73, 255, .13); }
+    .stage[data-state="approval"]::before { opacity: .75; background: rgba(231, 169, 61, .15); }
+    .stage[data-state="error"]::before { opacity: .62; background: rgba(207, 69, 103, .12); }
+    .stage[data-state="done"]::before, .stage[data-state="finished"]::before { opacity: .7; background: rgba(47, 175, 129, .12); }
+    .butterfly-svg { display: block; width: min(100%, 430px); height: auto; overflow: visible; }
+    .butterfly-svg .wing { transform-box: view-box; transform-origin: var(--pivot); will-change: transform; }
+    .wing-left { --pivot: 510px 548px; }
+    .wing-right { --pivot: 516px 548px; }
+    .stage[data-state="idle"] .wing-left { animation: flap-left 2.1s ease-in-out infinite; }
+    .stage[data-state="idle"] .wing-right { animation: flap-right 2.1s ease-in-out infinite; }
+    .stage[data-state="listening"] .wing { animation-duration: 1.45s !important; }
+    .stage[data-state="thinking"] .wing { animation-duration: 3.1s !important; }
+    .stage[data-state="tool"] .wing { animation-duration: 1.05s !important; }
+    .stage[data-state="approval"] .wing { animation-duration: 3.6s !important; }
+    .stage[data-state="speaking"] .wing { animation-duration: .82s !important; }
+    .stage[data-state="listening"] .wing, .stage[data-state="thinking"] .wing, .stage[data-state="tool"] .wing, .stage[data-state="approval"] .wing, .stage[data-state="speaking"] .wing { animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+    .stage[data-state="listening"] .wing-left, .stage[data-state="thinking"] .wing-left, .stage[data-state="tool"] .wing-left, .stage[data-state="approval"] .wing-left, .stage[data-state="speaking"] .wing-left { animation-name: flap-left; }
+    .stage[data-state="listening"] .wing-right, .stage[data-state="thinking"] .wing-right, .stage[data-state="tool"] .wing-right, .stage[data-state="approval"] .wing-right, .stage[data-state="speaking"] .wing-right { animation-name: flap-right; }
+    .stage[data-state="error"] .wing-left { animation: fold-left .55s ease-out 1 both; }
+    .stage[data-state="error"] .wing-right { animation: fold-right .55s ease-out 1 both; }
+    .stage[data-state="done"] .wing-left, .stage[data-state="finished"] .wing-left { animation: finish-left 1.2s cubic-bezier(.2,.8,.25,1) 1 both; }
+    .stage[data-state="done"] .wing-right, .stage[data-state="finished"] .wing-right { animation: finish-right 1.2s cubic-bezier(.2,.8,.25,1) 1 both; }
+    @keyframes flap-left { 0%,100% { transform: rotate(0deg) scaleX(1); } 50% { transform: rotate(-2deg) scaleX(.74) scaleY(.96); } }
+    @keyframes flap-right { 0%,100% { transform: rotate(0deg) scaleX(1); } 50% { transform: rotate(2deg) scaleX(.74) scaleY(.96); } }
+    @keyframes fold-left { 0% { transform: rotate(0deg) scaleX(1); } 55% { transform: rotate(-7deg) scaleX(.66); } 100% { transform: rotate(-4deg) scaleX(.74); } }
+    @keyframes fold-right { 0% { transform: rotate(0deg) scaleX(1); } 55% { transform: rotate(7deg) scaleX(.66); } 100% { transform: rotate(4deg) scaleX(.74); } }
+    @keyframes finish-left { 0%,100% { transform: rotate(0deg) scaleX(1); } 35% { transform: rotate(-4deg) scaleX(.68); } 68% { transform: rotate(3deg) scaleX(1.02); } }
+    @keyframes finish-right { 0%,100% { transform: rotate(0deg) scaleX(1); } 35% { transform: rotate(4deg) scaleX(.68); } 68% { transform: rotate(-3deg) scaleX(1.02); } }
+    .motion-off .butterfly-svg .wing, .motion-off .state-dot { animation: none !important; transform: none !important; }
+    .motion-off .stage::before, .motion-off .state-dot { transition: none !important; }
+    .state-bar { min-height: 66px; padding: 13px 20px; display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--line); }
+    .state-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #a29bb5; box-shadow: 0 0 0 4px rgba(162, 155, 181, .12); }
+    .state-bar[data-state="listening"] .state-dot, .state-bar[data-state="thinking"] .state-dot, .state-bar[data-state="tool"] .state-dot, .state-bar[data-state="speaking"] .state-dot { background: var(--electric); box-shadow: 0 0 0 4px rgba(114, 82, 255, .12); animation: dot-pulse 1.4s ease-in-out infinite; }
+    .state-bar[data-state="approval"] .state-dot { background: var(--amber); box-shadow: 0 0 0 4px rgba(184, 121, 22, .12); }
+    .state-bar[data-state="error"] .state-dot { background: var(--red); box-shadow: 0 0 0 4px rgba(199, 70, 98, .12); }
+    .state-bar[data-state="done"] .state-dot, .state-bar[data-state="finished"] .state-dot { background: var(--green); box-shadow: 0 0 0 4px rgba(32, 139, 105, .12); }
+    @keyframes dot-pulse { 50% { transform: scale(1.25); } }
+    .state-copy { min-width: 0; flex: 1; }
+    .state-copy strong { display: block; font-size: 13px; }
+    .state-copy span { display: block; color: var(--muted); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .state-time { color: var(--muted); font: 11px ui-monospace, monospace; }
+    .tool-progress { height: 3px; background: var(--surface-2); overflow: hidden; }
+    .tool-progress span { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--electric), var(--cyan)); transition: width .4s ease; }
+    .side-panel { padding: 19px; }
+    .side-panel h2 { margin: 0 0 5px; font-size: 16px; letter-spacing: -.025em; }
+    .side-panel .hint { margin: 0 0 17px; color: var(--muted); font-size: 12px; }
+    .state-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    .state-button { min-height: 46px; padding: 9px 10px; text-align: left; border: 1px solid var(--line); border-radius: 11px; background: #fff; cursor: pointer; transition: border .15s, background .15s, transform .15s; }
+    .state-button:hover { border-color: #c7b9f2; transform: translateY(-1px); }
+    .state-button[aria-pressed="true"] { border-color: #b7a4fb; background: #f5f1ff; color: var(--indigo); }
+    .state-button strong { display: block; font-size: 12px; }
+    .state-button small { display: block; margin-top: 2px; font-size: 10px; color: var(--muted); }
+    .divider { height: 1px; margin: 19px 0; background: var(--line); }
+    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .section-head span { font-size: 10px; color: var(--muted); }
+    .scenario-list { display: grid; gap: 7px; }
+    .scenario { width: 100%; padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; cursor: pointer; }
+    .scenario:hover { border-color: #c7b9f2; background: #fbfaff; }
+    .scenario span { display: block; min-width: 0; font-size: 12px; font-weight: 650; }
+    .scenario small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .scenario em { color: var(--electric); font-style: normal; font-size: 14px; }
+    .prompt-form { display: flex; gap: 7px; margin-top: 12px; }
+    .prompt-form input { min-width: 0; flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; background: var(--surface); color: var(--ink); outline: none; font-size: 12px; }
+    .prompt-form input:focus { border-color: #a793f5; box-shadow: 0 0 0 3px rgba(114,82,255,.1); }
+    .primary { border: 0; border-radius: 10px; padding: 0 13px; background: var(--indigo); color: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .primary:hover { background: #4e37a2; }
+    .bottom-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .7fr); gap: 18px; margin-top: 18px; }
+    .bottom-card { padding: 18px 20px; }
+    .bottom-card h2 { margin: 0 0 10px; font-size: 13px; }
+    .log { display: grid; gap: 0; max-height: 175px; overflow: auto; list-style: none; margin: 0; padding: 0; }
+    .log li { display: grid; grid-template-columns: 68px 94px 1fr; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+    .log li:last-child { border: 0; }
+    .log time { color: var(--muted); font: 10px ui-monospace, monospace; }
+    .log code { color: var(--indigo); font: 10px ui-monospace, monospace; }
+    .log span { min-width: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+    .api-copy { display: grid; gap: 10px; }
+    .api-copy p { margin: 0; color: var(--muted); font-size: 12px; }
+    pre { overflow: auto; margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: #faf9fd; color: #362b60; font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .api-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .motion-control { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+    .motion-control input { width: 86px; accent-color: var(--electric); }
+    .toast { position: fixed; left: 50%; bottom: 24px; z-index: 5; transform: translate(-50%, 12px); padding: 9px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--ink); color: white; font-size: 12px; opacity: 0; pointer-events: none; transition: .2s; }
+    .toast.visible { transform: translate(-50%,0); opacity: 1; }
+    :focus-visible { outline: 3px solid rgba(114, 82, 255, .55); outline-offset: 2px; }
+    @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .bottom-grid { grid-template-columns: 1fr; } .stage { min-height: 370px; } .butterfly-svg { width: min(82%, 390px); } }
+    @media (max-width: 520px) { .app { width: min(100% - 24px, 600px); padding-top: 18px; } .topbar { margin-bottom: 24px; } .intro p:last-child { font-size: 14px; } .panel { border-radius: 16px; } .panel-head { padding: 15px 16px 12px; } .stage { min-height: 320px; padding: 18px 10px; } .butterfly-svg { width: min(92%, 340px); } .side-panel, .bottom-card { padding: 16px; } .state-grid { gap: 6px; } .state-button { padding: 8px; } .log li { grid-template-columns: 56px 82px 1fr; gap: 6px; } .top-actions .quiet-button { padding: 7px 9px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-name">aurora</span>
+        <span style="color:var(--muted);font-weight:550">/ Agent motion</span>
+      </div>
+      <div class="top-actions">
+        <button class="quiet-button" id="motionToggle" type="button" aria-pressed="false">Mouvement : actif</button>
+        <button class="quiet-button" id="resetButton" type="button">Réinitialiser</button>
+      </div>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">Prototype interactif · identité Aurora</p>
+      <h1>Le papillon montre ce que fait l’agent.</h1>
+      <p>J’utilise ton logo source et le sépare en deux côtés autour du corps. Ces deux côtés se replient et s’ouvrent selon l’état de l’agent : ce n’est plus l’image entière qui flotte, ce sont bien les ailes qui battent.</p>
+    </section>
+
+    <div class="layout">
+      <section class="panel stage-panel" aria-label="Aperçu du papillon Aurora">
+        <div class="panel-head"><h2>Agent Aurora</h2><span class="canvas-label">Logo original · animé sans le redessiner</span></div>
+        <div class="stage" id="stage" data-state="idle">
+          <svg class="butterfly-svg" viewBox="0 0 1024 1024" role="img" aria-label="Papillon Aurora animé à partir du logo original">
+            <defs>
+              <clipPath id="clip-left"><rect x="0" y="0" width="520" height="1024"/></clipPath>
+              <clipPath id="clip-right"><rect x="520" y="0" width="504" height="1024"/></clipPath>
+            </defs>
+            <!-- Le logo est coupé au centre : les deux côtés s’ouvrent et se replient autour de l’axe du corps. -->
+            <g class="wing wing-left"><image href="aurora-butterfly-cutout.png" x="0" y="0" width="1024" height="1024" clip-path="url(#clip-left)"/></g>
+            <g class="wing wing-right"><image href="aurora-butterfly-cutout.png" x="0" y="0" width="1024" height="1024" clip-path="url(#clip-right)"/></g>
+          </svg>
+        </div>
+        <div class="state-bar" id="stateBar" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
+          <span class="state-dot" aria-hidden="true"></span>
+          <div class="state-copy"><strong id="stateLabel">Au repos</strong><span id="stateDetail">Prêt à commencer quand tu le souhaites.</span></div>
+          <span class="state-time" id="clock">00:00</span>
+        </div>
+        <div class="tool-progress" aria-label="Progression de l’action"><span id="progressBar"></span></div>
+      </section>
+
+      <aside class="panel side-panel">
+        <h2>Prévisualiser les états</h2>
+        <p class="hint">Choisis un état pour voir le papillon réagir.</p>
+        <div class="state-grid" id="stateGrid" role="group" aria-label="États de l’agent"></div>
+        <div class="divider"></div>
+        <div class="section-head"><h3 class="section-title">Scénarios</h3><span>Simulation locale</span></div>
+        <div class="scenario-list">
+          <button class="scenario" data-scenario="complete"><span>Demande de bout en bout<small>Écoute → réflexion → outil → réponse</small></span><em aria-hidden="true">↗</em></button>
+          <button class="scenario" data-scenario="approval"><span>Demande d’autorisation<small>L’agent attend ton accord</small></span><em aria-hidden="true">↗</em></button>
+          <button class="scenario" data-scenario="error"><span>Erreur puis reprise<small>Échec visible, retour au calme</small></span><em aria-hidden="true">↗</em></button>
+        </div>
+        <form class="prompt-form" id="promptForm">
+          <input id="userPrompt" type="text" maxlength="120" placeholder="Écris une demande à l’agent…" aria-label="Demande à simuler">
+          <button class="primary" type="submit">Envoyer</button>
+        </form>
+        <div class="divider"></div>
+        <div class="api-controls">
+          <span class="motion-control">Vitesse <input id="speed" type="range" min="0.5" max="1.6" step="0.1" value="1" aria-label="Vitesse de l’animation"><b id="speedValue">1×</b></span>
+          <button class="quiet-button" id="copyApi" type="button">Copier l’exemple API</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="bottom-grid">
+      <section class="panel bottom-card">
+        <div class="section-head"><h2>Journal des événements</h2><span id="logCount">0 événement</span></div>
+        <ol class="log" id="eventLog" aria-label="Journal des événements"></ol>
+      </section>
+      <section class="panel bottom-card api-copy">
+        <h2>Connexion à un agent</h2>
+        <p>Le prototype fonctionne sans backend. Dans Aurora, ton agent pourra envoyer les mêmes événements pour piloter l’animation.</p>
+        <pre id="apiCode">const butterfly = AuroraButterfly.create();
+
+butterfly.dispatch({ type: "run.start" });
+butterfly.dispatch({ type: "tool.start", name: "Créer une affiche" });
+butterfly.dispatch({ type: "tool.progress", progress: 0.6 });
+butterfly.dispatch({ type: "approval.request", label: "Valider le résultat" });
+butterfly.dispatch({ type: "done" });</pre>
+      </section>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const labels = {
+        idle: ["Au repos", "Prêt à commencer quand tu le souhaites."],
+        listening: ["À l’écoute", "L’agent reçoit ta demande."],
+        thinking: ["Réflexion", "L’agent organise les prochaines étapes."],
+        tool: ["En action", "L’agent travaille sur ta demande."],
+        approval: ["Ton accord est nécessaire", "Vérifie la proposition avant de continuer."],
+        speaking: ["Réponse en cours", "L’agent te présente le résultat."],
+        error: ["Un problème est survenu", "L’agent s’arrête et attend une nouvelle action."],
+        done: ["Étape terminée", "Le travail demandé est prêt à être consulté."],
+        finished: ["Tâche accomplie", "La demande est terminée avec succès."]
+      };
+      const order = ["idle", "listening", "thinking", "tool", "approval", "speaking", "error", "done", "finished"];
+      const stage = document.querySelector("#stage");
+      const bar = document.querySelector("#stateBar");
+      const stateLabel = document.querySelector("#stateLabel");
+      const stateDetail = document.querySelector("#stateDetail");
+      const progressBar = document.querySelector("#progressBar");
+      const log = document.querySelector("#eventLog");
+      const timers = new Set(), scenarioTimers = new Set();
+      let current = "idle", started = performance.now(), currentProgress = 0, motionEnabled = true, speed = 1;
+      const timeout = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); fn(); }, ms / speed); timers.add(id); return id; };
+      const clearTimers = () => { timers.forEach(clearTimeout); timers.clear(); };
+      const clearScenarioTimers = () => { scenarioTimers.forEach(clearTimeout); scenarioTimers.clear(); };
+      const scenarioTimeout = (fn, ms) => { const id = setTimeout(() => { scenarioTimers.delete(id); fn(); }, ms / speed); scenarioTimers.add(id); return id; };
+      const clockEl = document.querySelector("#clock");
+      function updateClock() {
+        const secs = Math.floor((performance.now() - started) / 1000), mm = String(Math.floor(secs / 60)).padStart(2, "0"), ss = String(secs % 60).padStart(2, "0");
+        clockEl.textContent = `${mm}:${ss}`;
+      }
+      setInterval(updateClock, 500);
+
+      function addLog(type, detail = "") {
+        const row = document.createElement("li"), time = document.createElement("time"), code = document.createElement("code"), text = document.createElement("span");
+        time.textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        code.textContent = type; text.textContent = detail || labels[current][0]; row.append(time, code, text); log.prepend(row);
+        while (log.children.length > 8) log.lastElementChild.remove();
+        document.querySelector("#logCount").textContent = `${log.children.length} événement${log.children.length > 1 ? "s" : ""}`;
+      }
+      function setState(next, detail = "", opts = {}) {
+        if (!labels[next]) return;
+        if (next !== current || opts.force) {
+          clearTimers(); current = next; stage.dataset.state = next; bar.dataset.state = next;
+          document.querySelectorAll(".state-button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.state === next)));
+        }
+        stateLabel.textContent = labels[next][0]; stateDetail.textContent = detail || labels[next][1];
+        if (next !== "tool" && next !== "thinking") { currentProgress = next === "done" || next === "finished" ? 1 : 0; progressBar.style.width = `${currentProgress * 100}%`; }
+        if (next === "done") timeout(() => setState("idle", "Étape terminée. Tu peux poursuivre."), 2800);
+        if (next === "error" && !opts.sticky) timeout(() => setState("idle", "Prêt à réessayer."), 4200);
+        if (opts.log !== false) addLog(next, detail);
+      }
+      function dispatch(event) {
+        const e = typeof event === "string" ? { type: event } : (event || {}), type = String(e.type || "").toLowerCase(), detail = e.name || e.label || e.message || "";
+        switch (type) {
+          case "input.start": case "listening": case "user.typing": setState("listening", detail); break;
+          case "run.start": case "thinking": case "reasoning": setState("thinking", detail); break;
+          case "tool.start": case "tool_call": setState("tool", detail || "Outil en cours…"); currentProgress = typeof e.progress === "number" ? e.progress : 0.12; progressBar.style.width = `${currentProgress * 100}%`; break;
+          case "tool.progress": currentProgress = Math.max(0, Math.min(1, Number(e.progress) || 0)); setState("tool", detail || "Progression de la tâche", { log: false }); progressBar.style.width = `${currentProgress * 100}%`; break;
+          case "tool.end": case "tool_result": setState("thinking", detail || "Étape terminée; l’agent continue."); break;
+          case "approval.request": case "approval_required": setState("approval", detail || "Vérifie la proposition de l’agent."); break;
+          case "approval.granted": case "approval.approve": setState("thinking", "Accord reçu. L’agent reprend."); break;
+          case "approval.denied": case "approval.reject": setState("idle", "Action refusée. Rien n’a été appliqué."); break;
+          case "token": case "message.delta": case "text.delta": case "speaking": setState("speaking", detail || "L’agent formule sa réponse.", { log: false }); break;
+          case "done": case "message.end": case "run.end": setState("done", detail || "Résultat prêt."); break;
+          case "complete": case "success": case "finished": setState("finished", detail || "Demande accomplie."); break;
+          case "error": case "run.error": setState("error", detail || "Une erreur est survenue."); break;
+          case "reset": case "idle": case "stop": clearTimers(); clearScenarioTimers(); currentProgress = 0; progressBar.style.width = "0%"; setState("idle", "Animation réinitialisée."); break;
+          default: break;
+        }
+      }
+      const API = { dispatch, set: (state, detail) => setState(state, detail), get state() { return current; } };
+      window.AuroraButterfly = { create: () => API, dispatch, set: API.set, get state() { return current; } };
+
+      const descriptions = {
+        idle: "Attente", listening: "Réception", thinking: "Préparation", tool: "Travail", approval: "Validation", speaking: "Réponse", error: "Erreur", done: "Terminé", finished: "Succès"
+      };
+      order.forEach(state => {
+        const button = document.createElement("button"); button.type = "button"; button.className = "state-button"; button.dataset.state = state;
+        button.setAttribute("aria-pressed", String(state === current)); button.innerHTML = `<strong>${labels[state][0]}</strong><small>${descriptions[state]}</small>`;
+        button.addEventListener("click", () => setState(state, "Aperçu manuel · " + labels[state][1], { force: true }));
+        document.querySelector("#stateGrid").append(button);
+      });
+
+      const scenarios = {
+        complete: [[0,"listening","Demande reçue"],[900,"thinking","L’agent prépare les étapes"],[1900,"tool","Création du visuel",.24],[3000,"progress","",.58],[4100,"progress","",.86],[4900,"thinking","Le visuel est prêt pour vérification"],[5800,"speaking","Voici une première proposition"],[7500,"done","Prototype simulé terminé"]],
+        approval: [[0,"thinking","Préparation d’une action"],[950,"tool","Préparer une modification",.48],[2050,"approval","Appliquer les changements au projet ?"],[5000,"approval","En attente de ton accord",null,true]],
+        error: [[0,"thinking","L’agent démarre"],[1000,"tool","Connexion à une ressource",.28],[2350,"error","La ressource n’a pas répondu. Tu peux réessayer."]]
+      };
+      function playScenario(name) {
+        clearTimers(); clearScenarioTimers(); dispatch({ type: "reset" });
+        scenarios[name].forEach(([delay, state, detail, progress, sticky]) => scenarioTimeout(() => {
+          if (state === "progress") dispatch({ type: "tool.progress", progress });
+          else setState(state, detail, { force: true, sticky: !!sticky });
+        }, delay + 50));
+      }
+      document.querySelectorAll("[data-scenario]").forEach(button => button.addEventListener("click", () => playScenario(button.dataset.scenario)));
+      document.querySelector("#resetButton").addEventListener("click", () => { clearTimers(); clearScenarioTimers(); progressBar.style.width = "0%"; currentProgress = 0; setState("idle", "Prêt à commencer quand tu le souhaites."); });
+      document.querySelector("#promptForm").addEventListener("submit", event => {
+        event.preventDefault(); const input = document.querySelector("#userPrompt"), prompt = input.value.trim();
+        if (!prompt) { input.focus(); return; }
+        playScenario("complete"); stateDetail.textContent = `Demande : « ${prompt} »`;
+        addLog("user.request", prompt); input.value = "";
+      });
+      document.querySelector("#speed").addEventListener("input", event => { speed = Number(event.target.value); document.querySelector("#speedValue").textContent = `${speed.toFixed(1).replace(".", ",")}×`; });
+      document.querySelector("#motionToggle").addEventListener("click", event => {
+        motionEnabled = !motionEnabled; document.documentElement.classList.toggle("motion-off", !motionEnabled);
+        event.currentTarget.setAttribute("aria-pressed", String(!motionEnabled)); event.currentTarget.textContent = `Mouvement : ${motionEnabled ? "actif" : "réduit"}`;
+        document.querySelector("#toast").textContent = motionEnabled ? "Animations activées" : "Animations réduites";
+        document.querySelector("#toast").classList.add("visible"); setTimeout(() => document.querySelector("#toast").classList.remove("visible"), 1500);
+      });
+      document.querySelector("#copyApi").addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(document.querySelector("#apiCode").textContent); document.querySelector("#toast").textContent = "Exemple API copié"; }
+        catch { document.querySelector("#toast").textContent = "Copie indisponible dans ce navigateur"; }
+        document.querySelector("#toast").classList.add("visible"); setTimeout(() => document.querySelector("#toast").classList.remove("visible"), 1600);
+      });
+      document.querySelector("#speed").dispatchEvent(new Event("input"));
+    })();
+  </script>
+</body>
+</html>
