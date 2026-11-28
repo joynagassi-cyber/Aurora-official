@@ -15,7 +15,7 @@ npm run dev
 
 ### Avatar papillon 3D
 
-Ouvrir `/butterfly` pour explorer le papillon Aurora procédural. Le maillage est construit en Three.js (ailes, nervures, corps, antennes et traînées), sans image 2D plaquée. Glisser pour orbiter, utiliser la molette pour zoomer, sélectionner l’un des huit états d’agent et jouer le scénario d’animation complet. La page respecte le réglage système de réduction des animations.
+La route racine `/` ouvre l’avatar papillon Aurora procédural; le studio graphique reste accessible sur `/studio`. Le maillage est construit en Three.js (ailes, nervures, corps, antennes et traînées), sans image 2D plaquée. Glisser pour orbiter, utiliser la molette pour zoomer, sélectionner l’un des huit états d’agent et jouer le scénario d’animation complet. La page respecte le réglage système de réduction des animations.
 
 ### Connexion Agnes AI
 

@@ -290,7 +290,7 @@ function Butterfly3D() {
 
   return <main className="butterfly-page">
     <header className="butterfly-topbar">
-      <a className="butterfly-back" href="/" aria-label="Retour au studio Aurora"><ArrowLeft size={17} /> <span>Retour au studio</span></a>
+      <a className="butterfly-back" href="/studio" aria-label="Retour au studio Aurora"><ArrowLeft size={17} /> <span>Retour au studio</span></a>
       <div className="butterfly-wordmark">aurora <span>/ AGENT BUTTERFLY</span></div>
       <span className="butterfly-live"><i /> MODÈLE 3D INTERACTIF</span>
     </header>

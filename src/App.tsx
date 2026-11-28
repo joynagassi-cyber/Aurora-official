@@ -48,7 +48,7 @@ function App() {
 
   return <div className="agent-app">
     <aside className="product-rail" aria-label="Navigation Aurora">
-      <a className="rail-brand" href="#studio" aria-label="Aurora, studio de création">
+      <a className="rail-brand" href="/studio" aria-label="Aurora, studio de création">
         <span className="rail-brand-mark"><Sparkles size={19} strokeWidth={1.8} /></span>
         <span className="rail-brand-name">aurora</span>
       </a>

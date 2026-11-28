@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom/client';
 import './style.css';
 import './studio.css';
 
-const isButterflyRoute = window.location.pathname === '/butterfly' || window.location.pathname === '/butterfly/';
-const Experience = isButterflyRoute
-  ? lazy(() => import('./Butterfly3D'))
-  : lazy(() => import('./StudioRoot'));
+const isStudioRoute = window.location.pathname === '/studio' || window.location.pathname.startsWith('/studio/');
+const Experience = isStudioRoute
+  ? lazy(() => import('./StudioRoot'))
+  : lazy(() => import('./Butterfly3D'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
